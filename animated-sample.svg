@@ -1,0 +1,214 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 410" width="400" height="410">
+  <defs>
+    <style>
+      @keyframes spin {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      @keyframes bounce {
+        0%, 100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-30px);
+        }
+      }
+
+      @keyframes slide {
+        0% {
+          transform: translateX(-50px);
+          opacity: 0;
+        }
+        50% {
+          opacity: 1;
+        }
+        100% {
+          transform: translateX(50px);
+          opacity: 0;
+        }
+      }
+
+      @keyframes colorChange {
+        0% {
+          fill: #FF6B6B;
+        }
+        50% {
+          fill: #4ECDC4;
+        }
+        100% {
+          fill: #FF6B6B;
+        }
+      }
+
+      .spinning-circle {
+        animation: spin 3s linear infinite;
+        transform-origin: 200px 100px;
+      }
+
+      .bouncing-box {
+        animation: bounce 1s ease-in-out infinite;
+      }
+
+      .sliding-text {
+        animation: slide 2s ease-in-out infinite;
+      }
+
+      .color-circle {
+        animation: colorChange 2s ease-in-out infinite;
+      }
+
+      .paused {
+        animation-play-state: paused !important;
+      }
+
+      .info-text {
+        font-size: 12px;
+        fill: #666;
+        font-family: Arial, sans-serif;
+      }
+    </style>
+  </defs>
+
+  <script type="text/javascript">
+    <![CDATA[
+    let animationsPaused = false;
+    let animationSpeed = 1;
+
+    document.addEventListener('keydown', function(event) {
+      const svg = document.querySelector('svg');
+      
+      if (event.key === ' ') {
+        event.preventDefault();
+        toggleAnimations(svg);
+      } else if (event.key === '+' || event.key === '=') {
+        event.preventDefault();
+        changeSpeed(0.1, svg);
+      } else if (event.key === '-' || event.key === '_') {
+        event.preventDefault();
+        changeSpeed(-0.1, svg);
+      } else if (event.key.toLowerCase() === 'r') {
+        event.preventDefault();
+        resetAnimations(svg);
+      } else if (event.key === '0') {
+        event.preventDefault();
+        normalizeSpeed(svg);
+      }
+      
+      updateInfoText(svg);
+    });
+
+    function toggleAnimations(svg) {
+      animationsPaused = !animationsPaused;
+      const elements = svg.querySelectorAll('[class*="spinning-"], [class*="bouncing-"], [class*="sliding-"], [class*="color-"]');
+      elements.forEach(el => {
+        if (animationsPaused) {
+          el.classList.add('paused');
+        } else {
+          el.classList.remove('paused');
+        }
+      });
+    }
+
+    function changeSpeed(delta, svg) {
+      animationSpeed = Math.max(0.1, animationSpeed + delta);
+      applySpeed(svg);
+    }
+
+    function normalizeSpeed(svg) {
+      animationSpeed = 1;
+      applySpeed(svg);
+    }
+
+    function applySpeed(svg) {
+      const elements = svg.querySelectorAll('[class*="spinning-"], [class*="bouncing-"], [class*="sliding-"], [class*="color-"]');
+      elements.forEach(el => {
+        const styles = window.getComputedStyle(el);
+        const animationDuration = styles.animationDuration;
+        el.style.animationPlayState = animationsPaused ? 'paused' : 'running';
+      });
+      
+      svg.style.setProperty('--speed', animationSpeed);
+      svg.querySelectorAll('style')[0].sheet.cssRules[0].style.animationDuration = (3 / animationSpeed) + 's';
+    }
+
+    function resetAnimations(svg) {
+      const elements = svg.querySelectorAll('[class*="spinning-"], [class*="bouncing-"], [class*="sliding-"], [class*="color-"]');
+      elements.forEach(el => {
+        el.style.animation = 'none';
+        setTimeout(() => {
+          el.style.animation = '';
+        }, 10);
+      });
+    }
+
+    function updateInfoText(svg) {
+      const infoEl = svg.querySelector('#info-display');
+      if (infoEl) {
+        let status = `Speed: ${animationSpeed.toFixed(1)}x | Status: ${animationsPaused ? 'PAUSED' : 'RUNNING'}`;
+        infoEl.textContent = status;
+      }
+    }
+
+    window.addEventListener('load', function() {
+      const svg = document.querySelector('svg');
+      updateInfoText(svg);
+    });
+    ]]>
+  </script>
+
+  <!-- Background -->
+  <rect width="400" height="410" fill="#f0f4f8"/>
+
+  <!-- Title -->
+  <text x="200" y="30" font-size="24" font-weight="bold" text-anchor="middle" fill="#333">
+    SVG Animation Demo
+  </text>
+
+  <!-- Spinning Circle Group -->
+  <g class="spinning-circle">
+    <circle cx="200" cy="100" r="30" fill="#FF6B6B"/>
+    <circle cx="200" cy="100" r="20" fill="none" stroke="#fff" stroke-width="2"/>
+  </g>
+
+  <!-- Bouncing Box -->
+  <g class="bouncing-box">
+    <rect x="160" y="180" width="80" height="60" rx="8" fill="#4ECDC4"/>
+    <text x="200" y="220" font-size="14" text-anchor="middle" fill="#fff" font-weight="bold">
+      Bounce
+    </text>
+  </g>
+
+  <!-- Sliding Text -->
+  <text class="sliding-text" x="200" y="300" font-size="16" text-anchor="middle" fill="#95E1D3" font-weight="bold">
+    ← Sliding →
+  </text>
+
+  <!-- Color Changing Circle -->
+  <circle class="color-circle" cx="100" cy="350" r="25"/>
+  <text x="100" y="360" font-size="12" text-anchor="middle" fill="#fff" font-weight="bold">
+    Color
+  </text>
+
+  <!-- Multiple rotating dots -->
+  <g style="animation: spin 4s linear infinite reverse; transform-origin: 300px 350px;">
+    <circle cx="300" cy="325" r="8" fill="#FFB347"/>
+    <circle cx="300" cy="375" r="8" fill="#FFB347"/>
+  </g>
+  <text x="300" y="360" font-size="12" text-anchor="middle" fill="#333" font-weight="bold">
+    Rotate
+  </text>
+
+  <!-- Keyboard Controls Info -->
+  <rect x="10" y="360" width="380" height="30" rx="4" fill="#f9f9f9" stroke="#ddd" stroke-width="1"/>
+  <text class="info-text" x="200" y="375" text-anchor="middle" font-size="11">
+    SPACE: Play/Pause | +/-: Speed | R: Reset | 0: Normal Speed
+  </text>
+  <text id="info-display" class="info-text" x="200" y="390" text-anchor="middle" font-size="10" fill="#999">
+    Speed: 1.0x | Status: RUNNING
+  </text>
+</svg>

@@ -1,0 +1,1513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced PCB Production Floor Simulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-page-a: #667eea;
+            --bg-page-b: #764ba2;
+            --bg-container: #ffffff;
+            --bg-section: #f8f9fa;
+            --bg-card: #ffffff;
+            --bg-tabs: #f5f5f5;
+            --bg-input: #ffffff;
+            --border-color: #e0e0e0;
+            --input-border: #dddddd;
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --text-muted: #888888;
+            --bg-info: #e3f2fd;
+            --text-info: #1565c0;
+            --bg-packing-box-a: #f5f5f5;
+            --bg-packing-box-b: #e8e8e8;
+            --bg-packing-header: #dddddd;
+            --bg-board-sn: #e3f2fd;
+            --border-board-sn: #90caf9;
+            --text-board-sn: #1565c0;
+        }
+
+        body.dark {
+            --bg-page-a: #1a1a2e;
+            --bg-page-b: #16213e;
+            --bg-container: #1e1e1e;
+            --bg-section: #252526;
+            --bg-card: #2a2a2a;
+            --bg-tabs: #252526;
+            --bg-input: #333333;
+            --border-color: #444444;
+            --input-border: #555555;
+            --text-primary: #e0e0e0;
+            --text-secondary: #b0b0b0;
+            --text-muted: #888888;
+            --bg-info: #1a3a5c;
+            --text-info: #8ecdf7;
+            --bg-packing-box-a: #333333;
+            --bg-packing-box-b: #2a2a2a;
+            --bg-packing-header: #3a3a3a;
+            --bg-board-sn: #274863;
+            --border-board-sn: #4a7fb5;
+            --text-board-sn: #8ecdf7;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--bg-page-a) 0%, var(--bg-page-b) 100%);
+            min-height: 100vh;
+            padding: 8px;
+            transition: background 0.3s;
+        }
+
+        .container {
+            max-width: 98vw;
+            margin: 0 auto;
+            background: var(--bg-container);
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            transition: background 0.3s;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 6px 16px;
+            text-align: center;
+            position: relative;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.4);
+            color: white;
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 0.75em;
+            cursor: pointer;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .header h1 {
+            font-size: 1.1em;
+            margin-bottom: 0;
+            display: inline;
+        }
+
+        .header p {
+            display: inline;
+            font-size: 0.75em;
+            opacity: 0.85;
+            margin-left: 8px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0;
+            background: var(--bg-tabs);
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 6px;
+            background: var(--bg-tabs);
+            color: var(--text-primary);
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9em;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab-btn.active {
+            background: var(--bg-container);
+            border-bottom-color: #667eea;
+            color: #667eea;
+        }
+
+        .tab-btn:hover {
+            background: var(--bg-container);
+        }
+
+        .tab-content {
+            display: none;
+            padding: 10px 14px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .control-section {
+            background: var(--bg-section);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .control-section h3 {
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .machine-settings {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .machine-config {
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            padding: 15px;
+            transition: all 0.3s;
+        }
+
+        .machine-config:hover {
+            border-color: #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+        }
+
+        .machine-config h4 {
+            color: #667eea;
+            font-size: 0.95em;
+            margin-bottom: 12px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 8px;
+        }
+
+        .config-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+
+        .config-row label {
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .config-row input {
+            width: 80px;
+            padding: 6px;
+            background: var(--bg-input);
+            color: var(--text-primary);
+            border: 1px solid var(--input-border);
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .config-row .unit {
+            color: #999;
+            font-size: 0.85em;
+            margin-left: 5px;
+        }
+
+        .global-input {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            background: var(--bg-input);
+            color: var(--text-primary);
+            border: 1px solid var(--input-border);
+            border-radius: 4px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            font-size: 0.9em;
+        }
+
+        .btn-start {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-start:hover:not(:disabled) {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .btn-pause {
+            background: #FF9800;
+            color: white;
+        }
+
+        .btn-pause:hover:not(:disabled) {
+            background: #e68900;
+            transform: translateY(-2px);
+        }
+
+        .btn-reset {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-reset:hover {
+            background: #da190b;
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .floor-dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .mini-stat {
+            background: var(--bg-section);
+            border-left: 4px solid #667eea;
+            border-radius: 6px;
+            padding: 8px 14px;
+            text-align: center;
+        }
+
+        .mini-stat.input { border-left-color: #2196F3; }
+        .mini-stat.processing { border-left-color: #FF9800; }
+        .mini-stat.output { border-left-color: #4CAF50; }
+
+        .mini-stat .mini-label {
+            font-size: 0.75em;
+            color: var(--text-secondary);
+            margin-bottom: 2px;
+        }
+
+        .mini-stat .mini-value {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .production-line {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 8px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .station-wrapper {
+            position: relative;
+            display: flex;
+            align-items: stretch;
+        }
+
+        .flow-connector {
+            position: absolute;
+            right: -11px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 5;
+            font-size: 14px;
+            line-height: 1;
+            color: #ccc;
+        }
+
+        .flow-connector.active {
+            color: #4CAF50;
+            text-shadow: 0 0 4px #4CAF50;
+            animation: flowPulse 0.8s ease-in-out infinite;
+        }
+
+        @keyframes flowPulse {
+            0%, 100% { opacity: 0.5; transform: translateY(-50%) scale(1); }
+            50% { opacity: 1; transform: translateY(-50%) scale(1.4); }
+        }
+
+        .station {
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            padding: 8px 10px;
+            height: 250px;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .station.critical {
+            border-color: #f44336;
+            background: #fff5f5;
+        }
+
+        body.dark .station.critical {
+            background: #3a1f1f;
+        }
+
+        .station-header {
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 2px;
+            font-size: 0.8em;
+        }
+
+        .station-info {
+            font-size: 0.65em;
+            color: var(--text-secondary);
+            margin-bottom: 1px;
+            line-height: 1.2;
+        }
+
+        .station-info.io-counts {
+            font-weight: 600;
+            color: var(--text-primary);
+            background: var(--bg-section);
+            padding: 1px 4px;
+            border-radius: 3px;
+            display: inline-block;
+        }
+
+        .station-capacity {
+            font-size: 0.75em;
+            background: #f0f0f0;
+            padding: 4px 6px;
+            border-radius: 3px;
+            margin: 8px 0;
+            color: #666;
+        }
+
+        .station-boards {
+            flex: 1;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px;
+            align-content: flex-start;
+            padding: 3px 0;
+            border-top: 1px solid var(--border-color);
+            margin-top: 3px;
+            overflow-y: auto;
+            min-height: 0;
+        }
+
+        .packing-extra {
+            max-height: 46px;
+            overflow-y: auto;
+            margin-top: 4px;
+        }
+
+        .station[data-station="packing"] .station-boards {
+            flex: 0 0 auto;
+            max-height: 40px;
+        }
+
+        .station[data-station="packing"] .packing-extra {
+            flex: 1;
+            max-height: none;
+        }
+
+        .board {
+            min-width: 38px;
+            height: 24px;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.58em;
+            color: white;
+            font-weight: bold;
+            animation: pulse 0.6s ease-in-out infinite;
+            cursor: pointer;
+            position: relative;
+            padding: 0 3px;
+            white-space: nowrap;
+        }
+
+        .board:hover::after {
+            content: attr(data-sn);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 3px;
+            white-space: nowrap;
+            font-size: 1.1em;
+            margin-bottom: 5px;
+            z-index: 10;
+        }
+
+        .board.good {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            border: 1px solid #2e7d32;
+        }
+
+        .board.processing {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            border: 1px solid #0d47a1;
+        }
+
+        .board.failed {
+            background: linear-gradient(135deg, #f44336, #da190b);
+            border: 1px solid #c62828;
+        }
+
+        .board.repair {
+            background: linear-gradient(135deg, #FF9800, #F57C00);
+            border: 1px solid #E65100;
+        }
+
+        .board.ever-failed {
+            border: 2px solid #d50000 !important;
+            box-shadow: 0 0 5px rgba(213, 0, 0, 0.9);
+        }
+
+        .board.selected-board {
+            outline: 3px solid #ffeb3b;
+            outline-offset: 1px;
+        }
+
+        .flying-board {
+            position: fixed;
+            min-width: 34px;
+            height: 22px;
+            border-radius: 4px;
+            color: white;
+            font-size: 0.6em;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+            z-index: 9999;
+            pointer-events: none;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+            transition: left 0.5s cubic-bezier(0.3, 0, 0.2, 1), top 0.5s cubic-bezier(0.3, 0, 0.2, 1), opacity 0.5s ease-in;
+        }
+
+        .flying-board.good {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            border: 1px solid #2e7d32;
+        }
+
+        .flying-board.failed {
+            background: linear-gradient(135deg, #f44336, #da190b);
+            border: 1px solid #c62828;
+        }
+
+        .activity-log {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8em;
+            border-radius: 6px;
+            padding: 10px;
+            max-height: 260px;
+            overflow-y: auto;
+        }
+
+        .activity-log .log-entry {
+            padding: 2px 0;
+            border-bottom: 1px solid #333;
+            white-space: nowrap;
+        }
+
+        .activity-log .log-time {
+            color: #888;
+        }
+
+        .activity-log .log-sn {
+            color: #4fc3f7;
+            font-weight: bold;
+        }
+
+        .activity-log .log-route {
+            color: #a5d6a7;
+        }
+
+        .activity-log .log-route.fail-route {
+            color: #ef9a9a;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .stat-card.success {
+            border-left-color: #4CAF50;
+        }
+
+        .stat-card.failed {
+            border-left-color: #f44336;
+        }
+
+        .stat-card.repair {
+            border-left-color: #FF9800;
+        }
+
+        .stat-card.throughput {
+            border-left-color: #2196F3;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9em;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .stat-card.success .stat-value {
+            color: #4CAF50;
+        }
+
+        .stat-card.failed .stat-value {
+            color: #f44336;
+        }
+
+        .stat-card.repair .stat-value {
+            color: #FF9800;
+        }
+
+        .stat-card.throughput .stat-value {
+            color: #2196F3;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 12px;
+        }
+
+        .info-card {
+            background: var(--bg-info);
+            border-left: 4px solid #2196F3;
+            padding: 12px;
+            border-radius: 6px;
+            color: var(--text-info);
+            font-size: 0.85em;
+            line-height: 1.5;
+        }
+
+        .info-card strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .packing-box {
+            background: linear-gradient(135deg, var(--bg-packing-box-a), var(--bg-packing-box-b));
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .packing-box-header {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            font-size: 0.9em;
+            background: var(--bg-packing-header);
+            padding: 6px;
+            border-radius: 3px;
+        }
+
+        .packing-contents {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            padding: 8px;
+            background: var(--bg-card);
+            border-radius: 3px;
+        }
+
+        .board-sn {
+            font-size: 0.65em;
+            padding: 2px 4px;
+            background: var(--bg-board-sn);
+            border: 1px solid var(--border-board-sn);
+            border-radius: 3px;
+            color: var(--text-board-sn);
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+        }
+
+        /* Movement animation */
+        @keyframes moveRight {
+            0% { transform: translateX(-100%); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes moveIn {
+            0% { transform: translateX(-30px) scale(0.6); opacity: 0; }
+            60% { transform: translateX(4px) scale(1.05); opacity: 1; }
+            100% { transform: translateX(0) scale(1); opacity: 1; }
+        }
+
+        .box-moving {
+            animation: moveRight 0.8s ease-out;
+        }
+
+        .station-boards .board.animating {
+            animation: moveIn 0.6s ease-out;
+        }
+
+        .current-box-strip {
+            margin-top: 8px;
+            border-top: 1px dashed #ccc;
+            padding-top: 6px;
+        }
+
+        .current-box-strip .board-sn {
+            background: #fff3e0;
+            border-color: #ffb74d;
+            color: #e65100;
+        }
+
+        .speed-control {
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .speed-control label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+        }
+
+        .speed-value {
+            text-align: center;
+            color: #667eea;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        @media (max-width: 1200px) {
+            .machine-settings {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .machine-settings {
+                grid-template-columns: 1fr;
+            }
+
+            .production-line {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏭 Advanced PCB Production Floor Simulator</h1>
+            <p>Continuous Flow Manufacturing with Serial Tracking & Repair Loop</p>
+            <button class="theme-toggle" id="themeToggleBtn" onclick="toggleTheme()">🌙 Dark Mode</button>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('configuration')">⚙️ Configuration</button>
+            <button class="tab-btn" onclick="switchTab('production')">📊 Production Floor</button>
+            <button class="tab-btn" onclick="switchTab('statistics')">📈 Statistics</button>
+        </div>
+
+        <!-- Configuration Tab -->
+        <div id="configuration" class="tab-content active">
+            <div class="control-section">
+                <h3>🚀 Global Settings</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; color: var(--text-primary);">
+                    <div>
+                        <label>Total Board Quantity:</label>
+                        <input type="number" id="globalQty" value="50" min="10" max="1000" class="global-input">
+                    </div>
+                    <div>
+                        <label>Failure Rate (%):</label>
+                        <input type="number" id="globalFailRate" value="15" min="0" max="100" class="global-input">
+                    </div>
+                    <div>
+                        <label>Repair Success Rate (%):</label>
+                        <input type="number" id="repairSuccessRate" value="70" min="0" max="100" class="global-input">
+                    </div>
+                    <div>
+                        <label>Packing Batch Size:</label>
+                        <input type="number" id="packingBatchSize" value="10" min="1" max="50" class="global-input">
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3>⚙️ Machine Configuration (Processing Time in Seconds)</h3>
+                <div class="machine-settings">
+                    <div class="machine-config">
+                        <h4>Stack/Serial Gen</h4>
+                        <div class="config-row">
+                            <label>Time per batch:</label>
+                            <div>
+                                <input type="number" id="stackTime" value="3" min="0.5" max="10" step="0.5">
+                                <span class="unit">sec</span>
+                            </div>
+                        </div>
+                        <div class="config-row">
+                            <label>Batch capacity:</label>
+                            <div>
+                                <input type="number" id="stackCapacity" value="1" min="1" max="5">
+                                <span class="unit">pcs</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="machine-config">
+                        <h4>PCB Tester</h4>
+                        <div class="config-row">
+                            <label>Time per board:</label>
+                            <div>
+                                <input type="number" id="testTime" value="2" min="0.5" max="10" step="0.5">
+                                <span class="unit">sec</span>
+                            </div>
+                        </div>
+                        <div class="config-row">
+                            <label>Parallel slots:</label>
+                            <div>
+                                <input type="number" id="testCapacity" value="2" min="1" max="5">
+                                <span class="unit">pcs</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="machine-config">
+                        <h4>Soldering</h4>
+                        <div class="config-row">
+                            <label>Time per board:</label>
+                            <div>
+                                <input type="number" id="solderTime" value="3" min="0.5" max="10" step="0.5">
+                                <span class="unit">sec</span>
+                            </div>
+                        </div>
+                        <div class="config-row">
+                            <label>Capacity:</label>
+                            <div>
+                                <input type="number" id="solderCapacity" value="2" min="1" max="5">
+                                <span class="unit">pcs</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="machine-config">
+                        <h4>Component Placement</h4>
+                        <div class="config-row">
+                            <label>Time per board:</label>
+                            <div>
+                                <input type="number" id="compTime" value="4" min="0.5" max="10" step="0.5">
+                                <span class="unit">sec</span>
+                            </div>
+                        </div>
+                        <div class="config-row">
+                            <label>Capacity:</label>
+                            <div>
+                                <input type="number" id="compCapacity" value="2" min="1" max="5">
+                                <span class="unit">pcs</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="machine-config">
+                        <h4>Assembly</h4>
+                        <div class="config-row">
+                            <label>Time per board:</label>
+                            <div>
+                                <input type="number" id="assemTime" value="3" min="0.5" max="10" step="0.5">
+                                <span class="unit">sec</span>
+                            </div>
+                        </div>
+                        <div class="config-row">
+                            <label>Capacity:</label>
+                            <div>
+                                <input type="number" id="assemCapacity" value="2" min="1" max="5">
+                                <span class="unit">pcs</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="machine-config">
+                        <h4>Functional Test</h4>
+                        <div class="config-row">
+                            <label>Time per board:</label>
+                            <div>
+                                <input type="number" id="funcTime" value="2" min="0.5" max="10" step="0.5">
+                                <span class="unit">sec</span>
+                            </div>
+                        </div>
+                        <div class="config-row">
+                            <label>Capacity:</label>
+                            <div>
+                                <input type="number" id="funcCapacity" value="2" min="1" max="5">
+                                <span class="unit">pcs</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="machine-config critical">
+                        <h4>Repair Station</h4>
+                        <div class="config-row">
+                            <label>Time per board:</label>
+                            <div>
+                                <input type="number" id="repairTime" value="8" min="1" max="30" step="0.5">
+                                <span class="unit">sec</span>
+                            </div>
+                        </div>
+                        <div class="config-row">
+                            <label>Capacity:</label>
+                            <div>
+                                <input type="number" id="repairCapacity" value="1" min="1" max="3">
+                                <span class="unit">pcs</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="machine-config">
+                        <h4>Packing</h4>
+                        <div class="config-row">
+                            <label>Time per box:</label>
+                            <div>
+                                <input type="number" id="packTime" value="1" min="0.5" max="10" step="0.5">
+                                <span class="unit">sec</span>
+                            </div>
+                        </div>
+                        <div class="config-row">
+                            <label>Capacity:</label>
+                            <div>
+                                <input type="number" id="packCapacity" value="10" min="1" max="50">
+                                <span class="unit">pcs</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn-start" id="startBtn" onclick="startSimulation()">▶ Start Simulation</button>
+                <button class="btn-pause" id="pauseBtn" onclick="pauseSimulation()" disabled>⏸ Pause</button>
+                <button class="btn-reset" id="resetBtn" onclick="resetSimulation()">🔄 Reset</button>
+            </div>
+
+            <div class="speed-control">
+                <label for="simSpeed">Simulation Speed</label>
+                <input type="range" id="simSpeed" min="0.5" max="3" step="0.5" value="1" onchange="changeSpeed(this.value)">
+                <div class="speed-value" id="speedDisplay">1.0x</div>
+            </div>
+        </div>
+
+        <!-- Production Floor Tab -->
+        <div id="production" class="tab-content">
+            <div class="production-line" id="productionFloor"></div>
+            <div class="control-section" style="margin-top: 15px;">
+                <h3>📜 Activity Log <span style="font-weight:400; font-size:0.6em; color:#888;">(unit serial number, source → destination, timestamp)</span></h3>
+                <div id="activityLog" class="activity-log"></div>
+            </div>
+        </div>
+
+        <!-- Statistics Tab -->
+        <div id="statistics" class="tab-content">
+            <div class="stats-grid">
+                <div class="stat-card throughput">
+                    <div class="stat-label">📦 Total Input</div>
+                    <div class="stat-value" id="statInput">0</div>
+                </div>
+                <div class="stat-card success">
+                    <div class="stat-label">✅ Completed (Good)</div>
+                    <div class="stat-value" id="statCompleted">0</div>
+                </div>
+                <div class="stat-card failed">
+                    <div class="stat-label">❌ Failed (Total)</div>
+                    <div class="stat-value" id="statFailed">0</div>
+                </div>
+                <div class="stat-card repair">
+                    <div class="stat-label">🔧 In Repair</div>
+                    <div class="stat-value" id="statRepair">0</div>
+                </div>
+                <div class="stat-card throughput">
+                    <div class="stat-label">📊 Pass Rate</div>
+                    <div class="stat-value" id="statPassRate">0%</div>
+                </div>
+                <div class="stat-card throughput">
+                    <div class="stat-label">📦 Boxes Packed</div>
+                    <div class="stat-value" id="statBoxes">0</div>
+                </div>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-card">
+                    <strong>ℹ️ Production Flow</strong>
+                    Serial Number Gen → PCB Test → Soldering → Component Placement → Assembly → Functional Test → Packing
+                </div>
+                <div class="info-card">
+                    <strong>🔧 Repair Loop</strong>
+                    Failed boards → Repair Station → Retest (Functional Test) → If Pass: Packing, If Fail: Scrap
+                </div>
+                <div class="info-card">
+                    <strong>📦 Packing Logic</strong>
+                    Accumulates boards until batch size reached, then closes box and starts new carton
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let state = {
+            running: false,
+            paused: false,
+            simulationSpeed: 1,
+            totalInput: 0,
+            completed: 0,
+            failedFinal: 0,
+            boxesPacked: 0,
+            boardCounter: 0,
+            boxCounter: 0,
+            animatingBoards: new Set(), // Track which boards are animating
+            selectedSn: null,
+            activityLog: [],
+
+            stations: {
+                stack: { queue: [], processing: [], time: 3, capacity: 1 },
+                pcbTest: { queue: [], processing: [], time: 2, capacity: 2 },
+                solder: { queue: [], processing: [], time: 3, capacity: 2 },
+                comp: { queue: [], processing: [], time: 4, capacity: 2 },
+                assem: { queue: [], processing: [], time: 3, capacity: 2 },
+                funcTest: { queue: [], processing: [], time: 2, capacity: 2 },
+                repair: { queue: [], processing: [], time: 8, capacity: 1 },
+                packing: { queue: [], processing: [], currentBox: [], time: 1, capacity: 10 }
+            }
+        };
+        Object.values(state.stations).forEach(st => { st.totalIn = 0; st.totalOut = 0; });
+
+        // Board object
+        function createBoard(id) {
+            return {
+                id: id,
+                sn: 'SN' + String(id).padStart(5, '0'),
+                status: 'good',
+                currentStation: 'stack',
+                startTime: Date.now(),
+                repairCount: 0
+            };
+        }
+
+        function startSimulation() {
+            const qty = parseInt(document.getElementById('globalQty').value) || 100;
+            const failRate = parseInt(document.getElementById('globalFailRate').value) || 15;
+
+            // Load config
+            state.stations.stack.time = parseFloat(document.getElementById('stackTime').value);
+            state.stations.stack.capacity = parseInt(document.getElementById('stackCapacity').value);
+            state.stations.pcbTest.time = parseFloat(document.getElementById('testTime').value);
+            state.stations.pcbTest.capacity = parseInt(document.getElementById('testCapacity').value);
+            state.stations.solder.time = parseFloat(document.getElementById('solderTime').value);
+            state.stations.solder.capacity = parseInt(document.getElementById('solderCapacity').value);
+            state.stations.comp.time = parseFloat(document.getElementById('compTime').value);
+            state.stations.comp.capacity = parseInt(document.getElementById('compCapacity').value);
+            state.stations.assem.time = parseFloat(document.getElementById('assemTime').value);
+            state.stations.assem.capacity = parseInt(document.getElementById('assemCapacity').value);
+            state.stations.funcTest.time = parseFloat(document.getElementById('funcTime').value);
+            state.stations.funcTest.capacity = parseInt(document.getElementById('funcCapacity').value);
+            state.stations.repair.time = parseFloat(document.getElementById('repairTime').value);
+            state.stations.repair.capacity = parseInt(document.getElementById('repairCapacity').value);
+            state.stations.packing.time = parseFloat(document.getElementById('packTime').value);
+            state.stations.packing.capacity = parseInt(document.getElementById('packingBatchSize').value);
+
+            state.globalFailRate = failRate;
+            state.repairSuccessRate = parseInt(document.getElementById('repairSuccessRate').value);
+            state.totalInput = qty;
+            state.running = true;
+            state.paused = false;
+            state.completed = 0;
+            state.failedFinal = 0;
+            state.boxesPacked = 0;
+            state.boardCounter = 0;
+            state.activityLog = [];
+
+            // Reset all stations
+            Object.keys(state.stations).forEach(key => {
+                state.stations[key].queue = [];
+                state.stations[key].processing = [];
+                state.stations[key].currentBox = [];
+                state.stations[key].lastFlowOut = 0;
+                state.stations[key].totalIn = 0;
+                state.stations[key].totalOut = 0;
+            });
+
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('pauseBtn').disabled = false;
+            document.getElementById('configuration').querySelectorAll('input').forEach(el => el.disabled = true);
+
+            updateProduction();
+            simulationLoop();
+        }
+
+        function pauseSimulation() {
+            state.paused = !state.paused;
+            document.getElementById('pauseBtn').textContent = state.paused ? '▶ Resume' : '⏸ Pause';
+        }
+
+        function resetSimulation() {
+            state.running = false;
+            state.paused = false;
+            state.completed = 0;
+            state.failedFinal = 0;
+            state.boxesPacked = 0;
+            state.boardCounter = 0;
+            state.boxCounter = 0;
+            state.activityLog = [];
+            state.selectedSn = null;
+
+            Object.keys(state.stations).forEach(key => {
+                state.stations[key].queue = [];
+                state.stations[key].processing = [];
+                state.stations[key].currentBox = [];
+                state.stations[key].lastFlowOut = 0;
+                state.stations[key].totalIn = 0;
+                state.stations[key].totalOut = 0;
+            });
+
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('pauseBtn').disabled = true;
+            document.getElementById('pauseBtn').textContent = '⏸ Pause';
+            document.getElementById('configuration').querySelectorAll('input').forEach(el => el.disabled = false);
+
+            updateProduction();
+            updateStats();
+            updateActivityLog();
+        }
+
+        function changeSpeed(value) {
+            state.simulationSpeed = parseFloat(value);
+            document.getElementById('speedDisplay').textContent = state.simulationSpeed.toFixed(1) + 'x';
+        }
+
+        function simulationLoop() {
+            if (!state.running) return;
+
+            if (!state.paused) {
+                // Add new boards to stack station
+                if (state.boardCounter < state.totalInput) {
+                    const board = createBoard(state.boardCounter++);
+                    state.stations.stack.queue.push(board);
+                    state.stations.stack.totalIn++;
+                }
+
+                // Process all stations
+                processStation('stack', 'pcbTest');
+                processStation('pcbTest', 'solder');
+                processStation('solder', 'comp');
+                processStation('comp', 'assem');
+                processStation('assem', 'funcTest');
+                processStation('funcTest', 'packing', true); // true = can fail
+                processStation('repair', 'funcTest'); // Repair goes back to funcTest
+                processPacking();
+            }
+
+            updateProduction();
+            updateStats();
+            updateActivityLog();
+
+            // Check if simulation complete
+            if (state.boardCounter >= state.totalInput &&
+                Object.keys(state.stations).every(key => 
+                    state.stations[key].queue.length === 0 && 
+                    state.stations[key].processing.length === 0
+                ) &&
+                state.stations.packing.currentBox.length === 0) {
+                state.running = false;
+                document.getElementById('startBtn').disabled = false;
+                document.getElementById('pauseBtn').disabled = true;
+            }
+
+            requestAnimationFrame(simulationLoop);
+        }
+
+        const STATION_NAMES = {
+            stack: 'Serial Gen', pcbTest: 'PCB Test', solder: 'Soldering', comp: 'Components',
+            assem: 'Assembly', funcTest: 'Func Test', repair: 'Repair', packing: 'Packing'
+        };
+
+        function selectBoard(sn) {
+            state.selectedSn = (state.selectedSn === sn) ? null : sn;
+            updateProduction();
+        }
+
+        function logTransfer(sn, fromKey, toKey, failed) {
+            state.activityLog.unshift({
+                time: Date.now(),
+                sn: sn,
+                from: STATION_NAMES[fromKey] || fromKey,
+                to: STATION_NAMES[toKey] || toKey,
+                failed: !!failed
+            });
+            if (state.activityLog.length > 300) state.activityLog.length = 300;
+        }
+
+        // Animates a clone flying from the source station card to the destination card (drag-and-drop style)
+        function spawnFlyingBoard(sn, fromKey, toKey, failed) {
+            const floor = document.getElementById('productionFloor');
+            const fromEl = floor && floor.querySelector(`[data-station="${fromKey}"]`);
+            const toEl = floor && floor.querySelector(`[data-station="${toKey}"]`);
+            if (!fromEl || !toEl) return;
+
+            const fromRect = fromEl.getBoundingClientRect();
+            const toRect = toEl.getBoundingClientRect();
+            const isSelected = state.selectedSn === sn;
+
+            const fly = document.createElement('div');
+            fly.className = `flying-board ${failed ? 'failed' : 'good'}`;
+            fly.textContent = sn;
+            if (isSelected) {
+                fly.style.transform = 'scale(1.4)';
+                fly.style.outline = '3px solid #ffeb3b';
+            }
+            fly.style.left = (fromRect.left + fromRect.width / 2 - 17) + 'px';
+            fly.style.top = (fromRect.top + fromRect.height / 2 - 11) + 'px';
+            document.body.appendChild(fly);
+
+            requestAnimationFrame(() => {
+                fly.style.left = (toRect.left + toRect.width / 2 - 17) + 'px';
+                fly.style.top = (toRect.top + toRect.height / 2 - 11) + 'px';
+                fly.style.opacity = '0.25';
+            });
+
+            setTimeout(() => fly.remove(), 550);
+        }
+
+        function updateActivityLog() {
+            const el = document.getElementById('activityLog');
+            if (!el) return;
+            const entries = state.activityLog.slice(0, 40);
+            el.innerHTML = entries.map(e => {
+                const t = new Date(e.time).toLocaleTimeString();
+                const routeClass = e.failed ? 'log-route fail-route' : 'log-route';
+                const arrow = e.failed ? '⇥' : '→';
+                return `<div class="log-entry"><span class="log-time">[${t}]</span> <span class="log-sn">${e.sn}</span> <span class="${routeClass}">${e.from} ${arrow} ${e.to}</span></div>`;
+            }).join('') || '<div class="log-entry">No transfers yet…</div>';
+        }
+
+        function processStation(fromStation, toStation, canFail = false) {
+            const from = state.stations[fromStation];
+            const to = toStation ? state.stations[toStation] : null;
+
+            // Move completed boards to output
+            from.processing = from.processing.filter(board => {
+                const duration = from.time * 1000 / state.simulationSpeed;
+                if (Date.now() - board.processStart > duration) {
+                    if (canFail && Math.random() * 100 < state.globalFailRate) {
+                        board.status = 'failed';
+                        board.everFailed = true;
+                        markAnimating(board);
+                        state.stations.repair.queue.push(board);
+                        state.stations.repair.totalIn++;
+                        from.totalOut++;
+                        from.lastFlowOut = Date.now();
+                        logTransfer(board.sn, fromStation, 'repair', true);
+                        spawnFlyingBoard(board.sn, fromStation, 'repair', true);
+                    } else if (toStation) {
+                        board.status = 'good';
+                        markAnimating(board);
+                        to.queue.push(board);
+                        to.totalIn++;
+                        from.totalOut++;
+                        from.lastFlowOut = Date.now();
+                        logTransfer(board.sn, fromStation, toStation, false);
+                        spawnFlyingBoard(board.sn, fromStation, toStation, false);
+                    } else {
+                        board.status = 'good';
+                        from.totalOut++;
+                        state.completed++;
+                    }
+                    return false;
+                }
+                return true;
+            });
+
+            // Move queued boards to processing
+            while (from.processing.length < from.capacity && from.queue.length > 0) {
+                const board = from.queue.shift();
+                board.processStart = Date.now();
+                board.currentStation = fromStation;
+                from.processing.push(board);
+                markAnimating(board);
+            }
+        }
+
+        // Animation class is transient; clear it so re-renders don't restart the CSS animation forever
+        function markAnimating(board) {
+            board.isAnimating = true;
+            setTimeout(() => { board.isAnimating = false; }, 650);
+        }
+
+        function processPacking() {
+            const pack = state.stations.packing;
+            
+            // Move completed boxes
+            pack.processing = pack.processing.filter(box => {
+                const duration = pack.time * 1000 / state.simulationSpeed;
+                if (Date.now() - box.packStart > duration) {
+                    state.boxesPacked++;
+                    state.completed += box.boards.length;
+                    pack.totalOut += box.boards.length;
+                    return false;
+                }
+                return true;
+            });
+
+            // Add boards to current box
+            while (pack.queue.length > 0 && pack.currentBox.length < pack.capacity) {
+                pack.currentBox.push(pack.queue.shift());
+            }
+
+            // Close box if full
+            if (pack.currentBox.length >= pack.capacity) {
+                const boxNum = ++state.boxCounter;
+                pack.processing.push({
+                    boxId: boxNum,
+                    boxSN: 'BOX' + String(boxNum).padStart(4, '0'),
+                    boards: pack.currentBox,
+                    packStart: Date.now(),
+                    isAnimating: true
+                });
+                
+                // Animation completes after 0.8 seconds
+                setTimeout(() => {
+                    pack.processing.forEach(box => {
+                        if (box.boxId === boxNum) {
+                            box.isAnimating = false;
+                        }
+                    });
+                }, 800);
+                
+                pack.currentBox = [];
+            }
+        }
+
+        function updateProduction() {
+            let html = '';
+            
+            const stationConfigs = [
+                { key: 'stack', name: 'Serial Gen', icon: '🏷️' },
+                { key: 'pcbTest', name: 'PCB Test', icon: '🧪' },
+                { key: 'solder', name: 'Soldering', icon: '🔥' },
+                { key: 'comp', name: 'Components', icon: '⚙️' },
+                { key: 'assem', name: 'Assembly', icon: '🛠️' },
+                { key: 'funcTest', name: 'Func Test', icon: '✓' },
+                { key: 'repair', name: 'Repair', icon: '🔧' },
+                { key: 'packing', name: 'Packing', icon: '📦' }
+            ];
+
+            stationConfigs.forEach((config, idx) => {
+                const station = state.stations[config.key];
+                const isRepair = config.key === 'repair';
+                
+                let boardsHtml = '';
+                [...station.queue, ...station.processing].forEach(board => {
+                    const statusClass = isRepair ? 'repair' : 
+                                       board.status === 'failed' ? 'failed' : 
+                                       station.processing.includes(board) ? 'processing' : 'good';
+                    const animClass = board.isAnimating ? 'animating' : '';
+                    const failClass = board.everFailed ? 'ever-failed' : '';
+                    const selClass = state.selectedSn === board.sn ? 'selected-board' : '';
+                    const failNote = board.everFailed ? ' (previously failed)' : '';
+                    boardsHtml += `<div class="board ${statusClass} ${animClass} ${failClass} ${selClass}" data-sn="${board.sn}" title="${board.sn}${failNote}" onclick="selectBoard('${board.sn}')">${board.sn}</div>`;
+                });
+
+                if (config.key === 'packing') {
+                    // currentBox shown separately below as SN badges
+                }
+
+                const isLastInChain = idx < stationConfigs.length - 1 && config.key !== 'repair';
+                const flowActive = station.lastFlowOut && (Date.now() - station.lastFlowOut < 1200);
+
+                html += `
+                    <div class="station-wrapper">
+                    <div class="station ${isRepair ? 'critical' : ''}" data-station="${config.key}">
+                        <div class="station-header">${config.icon} ${config.name}</div>
+                        <div class="station-info">
+                            Time: ${station.time.toFixed(1)}s | Cap: ${station.capacity}
+                        </div>
+                        <div class="station-info">
+                            Queue: ${station.queue.length} | Processing: ${station.processing.length}
+                        </div>
+                        <div class="station-info io-counts">
+                            In: ${station.totalIn} | Out: ${station.totalOut}
+                        </div>
+                        ${config.key === 'packing' ? `
+                            <div class="station-info">
+                                Box: ${state.stations.packing.currentBox.length}/${state.stations.packing.capacity}
+                            </div>
+                        ` : ''}
+                        <div class="station-boards">${boardsHtml}</div>
+
+                        ${(config.key === 'packing' && (state.stations.packing.currentBox.length > 0 || state.stations.packing.processing.length > 0)) ? `
+                        <div class="packing-extra">
+                        ${state.stations.packing.currentBox.length > 0 ? `
+                            <div class="current-box-strip">
+                                <div style="font-weight: 600; color: #e65100; font-size: 0.8em; margin-bottom: 4px;">📥 Filling current box:</div>
+                                <div class="packing-contents">
+                                    ${state.stations.packing.currentBox.map(b => 
+                                        `<span class="board-sn" title="${b.sn}">${b.sn}</span>`
+                                    ).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        ${state.stations.packing.processing.length > 0 ? `
+                            <div style="margin-top: 8px; border-top: 1px solid #e0e0e0; padding-top: 6px;">
+                                <div style="font-weight: 600; color: #333; margin-bottom: 4px; font-size: 0.85em;">📦 Packed Boxes:</div>
+                                ${state.stations.packing.processing.map(box => {
+                                    const animClass = box.isAnimating ? 'box-moving' : '';
+                                    return `
+                                        <div class="packing-box ${animClass}">
+                                            <div class="packing-box-header">
+                                                🏷️ ${box.boxSN} (${box.boards.length} boards)
+                                            </div>
+                                            <div class="packing-contents">
+                                                ${box.boards.map(b => 
+                                                    `<span class="board-sn" title="${b.sn}">${b.sn}</span>`
+                                                ).join('')}
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        ` : ''}
+                        </div>
+                        ` : ''}
+                    </div>
+                    ${isLastInChain ? `<div class="flow-connector ${flowActive ? 'active' : ''}" title="Flow direction">➜</div>` : ''}
+                    </div>
+                `;
+            });
+
+            document.getElementById('productionFloor').innerHTML = html;
+        }
+
+        function updateStats() {
+            const total = state.completed + state.failedFinal;
+            const passRate = total > 0 ? ((state.completed / state.totalInput) * 100).toFixed(1) : 0;
+
+            document.getElementById('statInput').textContent = state.totalInput;
+            document.getElementById('statCompleted').textContent = state.completed;
+            document.getElementById('statFailed').textContent = state.failedFinal;
+            document.getElementById('statRepair').textContent = 
+                state.stations.repair.queue.length + state.stations.repair.processing.length;
+            document.getElementById('statPassRate').textContent = passRate + '%';
+            document.getElementById('statBoxes').textContent = state.boxesPacked;
+        }
+
+        function toggleTheme() {
+            const isDark = document.body.classList.toggle('dark');
+            document.getElementById('themeToggleBtn').textContent = isDark ? '☀️ Light Mode' : '🌙 Dark Mode';
+            localStorage.setItem('pcbSimTheme', isDark ? 'dark' : 'light');
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Initialize
+        if (localStorage.getItem('pcbSimTheme') === 'dark') {
+            document.body.classList.add('dark');
+            document.getElementById('themeToggleBtn').textContent = '☀️ Light Mode';
+        }
+        updateProduction();
+        updateStats();
+    </script>
+</body>
+</html>
