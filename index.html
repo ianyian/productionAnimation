@@ -80,14 +80,26 @@
             color: white;
             padding: 6px 16px;
             text-align: center;
-            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
         }
 
-        .theme-toggle {
-            position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
+        .header-title {
+            flex: 1 1 400px;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .theme-toggle, .language-select {
             background: rgba(255,255,255,0.15);
             border: 1px solid rgba(255,255,255,0.4);
             color: white;
@@ -95,6 +107,10 @@
             padding: 4px 10px;
             font-size: 0.75em;
             cursor: pointer;
+        }
+
+        .language-select option {
+            color: #333;
         }
 
         .theme-toggle:hover {
@@ -787,9 +803,18 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🏭 Advanced PCB Production Floor Simulator</h1>
-            <p>Continuous Flow Manufacturing with Serial Tracking & Repair Loop</p>
-            <button class="theme-toggle" id="themeToggleBtn" onclick="toggleTheme()">🌙 Dark Mode</button>
+            <div class="header-title">
+                <h1>🏭 Advanced PCB Production Floor Simulator</h1>
+                <p>Continuous Flow Manufacturing with Serial Tracking & Repair Loop</p>
+            </div>
+            <div class="header-controls">
+                <select class="language-select" id="languageSelect" aria-label="Language" onchange="setLanguage(this.value)">
+                    <option value="en">English</option>
+                    <option value="es">Español</option>
+                    <option value="zh">中文</option>
+                </select>
+                <button class="theme-toggle" id="themeToggleBtn" onclick="toggleTheme()">🌙 Dark Mode</button>
+            </div>
         </div>
 
         <div class="tabs">
@@ -1040,6 +1065,173 @@
     </div>
 
     <script>
+        const translations = {
+            es: {
+                '🏭 Advanced PCB Production Floor Simulator': '🏭 Simulador avanzado de producción de PCB',
+                'Continuous Flow Manufacturing with Serial Tracking & Repair Loop': 'Fabricación de flujo continuo con seguimiento de serie y ciclo de reparación',
+                '⚙️ Configuration': '⚙️ Configuración',
+                '📊 Production Floor': '📊 Planta de producción',
+                '📈 Statistics': '📈 Estadísticas',
+                '🌙 Dark Mode': '🌙 Modo oscuro',
+                '☀️ Light Mode': '☀️ Modo claro',
+                '🚀 Global Settings': '🚀 Ajustes generales',
+                'Total Board Quantity:': 'Cantidad total de placas:',
+                'Failure Rate (%):': 'Tasa de fallos (%):',
+                'Repair Success Rate (%):': 'Tasa de reparación exitosa (%):',
+                'Packing Batch Size:': 'Tamaño del lote de embalaje:',
+                '⚙️ Machine Configuration (Processing Time in Seconds)': '⚙️ Configuración de máquinas (tiempo en segundos)',
+                'Stack/Serial Gen': 'Generación de serie',
+                'PCB Tester': 'Prueba de PCB',
+                'Soldering': 'Soldadura',
+                'Component Placement': 'Colocación de componentes',
+                'Assembly': 'Montaje',
+                'Functional Test': 'Prueba funcional',
+                'Repair Station': 'Estación de reparación',
+                'Packing': 'Embalaje',
+                'Time per batch:': 'Tiempo por lote:',
+                'Batch capacity:': 'Capacidad por lote:',
+                'Time per board:': 'Tiempo por placa:',
+                'Parallel slots:': 'Puestos paralelos:',
+                'Capacity:': 'Capacidad:',
+                'Time per box:': 'Tiempo por caja:',
+                'sec': 's',
+                'pcs': 'uds.',
+                '▶ Start Simulation': '▶ Iniciar simulación',
+                '⏸ Pause': '⏸ Pausar',
+                '▶ Resume': '▶ Reanudar',
+                '🔄 Reset': '🔄 Reiniciar',
+                'Simulation Speed': 'Velocidad de simulación',
+                '📜 Activity Log': '📜 Registro de actividad',
+                '(unit serial number, source → destination, timestamp)': '(número de serie, origen → destino, hora)',
+                '📦 Total Input': '📦 Entrada total',
+                '✅ Completed (Good)': '✅ Completadas (correctas)',
+                '❌ Failed (Total)': '❌ Fallidas (total)',
+                '🔧 In Repair': '🔧 En reparación',
+                '📊 Pass Rate': '📊 Tasa de aprobación',
+                '📦 Boxes Packed': '📦 Cajas embaladas',
+                'ℹ️ Production Flow': 'ℹ️ Flujo de producción',
+                'Serial Number Gen → PCB Test → Soldering → Component Placement → Assembly → Functional Test → Packing': 'Generación de serie → Prueba de PCB → Soldadura → Colocación de componentes → Montaje → Prueba funcional → Embalaje',
+                '🔧 Repair Loop': '🔧 Ciclo de reparación',
+                'Failed boards → Repair Station → Retest (Functional Test) → If Pass: Packing, If Fail: Scrap': 'Placas fallidas → Reparación → Nueva prueba funcional → Si aprueba: embalaje; si falla: descarte',
+                '📦 Packing Logic': '📦 Lógica de embalaje',
+                'Accumulates boards until batch size reached, then closes box and starts new carton': 'Acumula placas hasta completar el lote, cierra la caja y comienza otra',
+                'Serial Gen': 'Generación de serie',
+                'PCB Test': 'Prueba de PCB',
+                'Components': 'Componentes',
+                'Func Test': 'Prueba funcional',
+                'Repair': 'Reparación',
+                'Time': 'Tiempo', 'Cap': 'Cap.', 'Queue': 'Cola', 'Processing': 'En proceso',
+                'In': 'Entrada', 'Out': 'Salida', 'Box': 'Caja',
+                'Filling current box:': 'Llenando caja actual:',
+                'Packed Boxes:': 'Cajas embaladas:',
+                'boards': 'placas',
+                'Flow direction': 'Dirección del flujo',
+                ' (previously failed)': ' (falló anteriormente)',
+                'No transfers yet…': 'Aún no hay movimientos…'
+            },
+            zh: {
+                '🏭 Advanced PCB Production Floor Simulator': '🏭 高级 PCB 生产车间模拟器',
+                'Continuous Flow Manufacturing with Serial Tracking & Repair Loop': '连续流生产、序列号追踪与维修循环',
+                '⚙️ Configuration': '⚙️ 配置',
+                '📊 Production Floor': '📊 生产车间',
+                '📈 Statistics': '📈 统计数据',
+                '🌙 Dark Mode': '🌙 深色模式',
+                '☀️ Light Mode': '☀️ 浅色模式',
+                '🚀 Global Settings': '🚀 全局设置',
+                'Total Board Quantity:': '电路板总数：',
+                'Failure Rate (%):': '故障率 (%)：',
+                'Repair Success Rate (%):': '维修成功率 (%)：',
+                'Packing Batch Size:': '每箱数量：',
+                '⚙️ Machine Configuration (Processing Time in Seconds)': '⚙️ 设备配置（处理时间以秒计）',
+                'Stack/Serial Gen': '序列号生成',
+                'PCB Tester': 'PCB 测试机',
+                'Soldering': '焊接',
+                'Component Placement': '元件贴装',
+                'Assembly': '组装',
+                'Functional Test': '功能测试',
+                'Repair Station': '维修站',
+                'Packing': '包装',
+                'Time per batch:': '每批时间：',
+                'Batch capacity:': '每批容量：',
+                'Time per board:': '每板时间：',
+                'Parallel slots:': '并行工位：',
+                'Capacity:': '容量：',
+                'Time per box:': '每箱时间：',
+                'sec': '秒',
+                'pcs': '件',
+                '▶ Start Simulation': '▶ 开始模拟',
+                '⏸ Pause': '⏸ 暂停',
+                '▶ Resume': '▶ 继续',
+                '🔄 Reset': '🔄 重置',
+                'Simulation Speed': '模拟速度',
+                '📜 Activity Log': '📜 活动记录',
+                '(unit serial number, source → destination, timestamp)': '（序列号、来源 → 目的地、时间）',
+                '📦 Total Input': '📦 总投入',
+                '✅ Completed (Good)': '✅ 完成（合格）',
+                '❌ Failed (Total)': '❌ 故障总数',
+                '🔧 In Repair': '🔧 维修中',
+                '📊 Pass Rate': '📊 合格率',
+                '📦 Boxes Packed': '📦 已包装箱数',
+                'ℹ️ Production Flow': 'ℹ️ 生产流程',
+                'Serial Number Gen → PCB Test → Soldering → Component Placement → Assembly → Functional Test → Packing': '序列号生成 → PCB 测试 → 焊接 → 元件贴装 → 组装 → 功能测试 → 包装',
+                '🔧 Repair Loop': '🔧 维修流程',
+                'Failed boards → Repair Station → Retest (Functional Test) → If Pass: Packing, If Fail: Scrap': '故障电路板 → 维修站 → 重新进行功能测试 → 合格：包装；不合格：报废',
+                '📦 Packing Logic': '📦 包装逻辑',
+                'Accumulates boards until batch size reached, then closes box and starts new carton': '电路板达到每箱数量后封箱，再开始装下一箱',
+                'Serial Gen': '序列号生成',
+                'PCB Test': 'PCB 测试',
+                'Components': '元件贴装',
+                'Func Test': '功能测试',
+                'Repair': '维修',
+                'Time': '时间', 'Cap': '容量', 'Queue': '排队', 'Processing': '处理中',
+                'In': '入站', 'Out': '出站', 'Box': '箱内',
+                'Filling current box:': '当前装箱：',
+                'Packed Boxes:': '已装箱：',
+                'boards': '块电路板',
+                'Flow direction': '流转方向',
+                ' (previously failed)': '（曾发生故障）',
+                'No transfers yet…': '暂无流转记录…'
+            }
+        };
+        let language = 'en';
+
+        function t(text) {
+            return translations[language]?.[text] || text;
+        }
+
+        const staticText = [];
+        const walker = document.createTreeWalker(document.querySelector('.container'), NodeFilter.SHOW_TEXT);
+        while (walker.nextNode()) {
+            const node = walker.currentNode;
+            if (node.parentElement.closest('#productionFloor, #activityLog, .stat-value, #speedDisplay, #themeToggleBtn, #pauseBtn, #languageSelect')) continue;
+            const original = node.textContent.trim();
+            if (original && (translations.es[original] || translations.zh[original])) {
+                staticText.push({ node, original });
+            }
+        }
+
+        function setLanguage(value) {
+            language = ['en', 'es', 'zh'].includes(value) ? value : 'en';
+            document.documentElement.lang = language === 'zh' ? 'zh-CN' : language;
+            document.getElementById('languageSelect').value = language;
+            localStorage.setItem('pcbSimLanguage', language);
+            staticText.forEach(({ node, original }) => {
+                node.textContent = node.textContent.replace(node.textContent.trim(), t(original));
+            });
+            document.title = t('🏭 Advanced PCB Production Floor Simulator').replace('🏭 ', '');
+            document.getElementById('languageSelect').setAttribute('aria-label', language === 'es' ? 'Idioma' : language === 'zh' ? '语言' : 'Language');
+            document.getElementById('pauseBtn').textContent = t(state.paused ? '▶ Resume' : '⏸ Pause');
+            updateThemeButton();
+            updateProduction();
+            updateActivityLog();
+        }
+
+        function updateThemeButton() {
+            document.getElementById('themeToggleBtn').textContent = t(
+                document.body.classList.contains('dark') ? '☀️ Light Mode' : '🌙 Dark Mode'
+            );
+        }
+
         // Global state
         let state = {
             running: false,
@@ -1489,7 +1681,7 @@
 
         function toggleTheme() {
             const isDark = document.body.classList.toggle('dark');
-            document.getElementById('themeToggleBtn').textContent = isDark ? '☀️ Light Mode' : '🌙 Dark Mode';
+            updateThemeButton();
             localStorage.setItem('pcbSimTheme', isDark ? 'dark' : 'light');
         }
 
@@ -1504,8 +1696,8 @@
         // Initialize
         if (localStorage.getItem('pcbSimTheme') === 'dark') {
             document.body.classList.add('dark');
-            document.getElementById('themeToggleBtn').textContent = '☀️ Light Mode';
         }
+        setLanguage(localStorage.getItem('pcbSimLanguage') || 'en');
         updateProduction();
         updateStats();
     </script>
