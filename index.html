@@ -1094,7 +1094,7 @@
                 'Parallel slots:': 'Puestos paralelos:',
                 'Capacity:': 'Capacidad:',
                 'Time per box:': 'Tiempo por caja:',
-                'sec': 's',
+                'sec': 's', 's': 's',
                 'pcs': 'uds.',
                 '▶ Start Simulation': '▶ Iniciar simulación',
                 '⏸ Pause': '⏸ Pausar',
@@ -1157,7 +1157,7 @@
                 'Parallel slots:': '并行工位：',
                 'Capacity:': '容量：',
                 'Time per box:': '每箱时间：',
-                'sec': '秒',
+                'sec': '秒', 's': '秒',
                 'pcs': '件',
                 '▶ Start Simulation': '▶ 开始模拟',
                 '⏸ Pause': '⏸ 暂停',
@@ -1206,7 +1206,9 @@
             if (node.parentElement.closest('#productionFloor, #activityLog, .stat-value, #speedDisplay, #themeToggleBtn, #pauseBtn, #languageSelect')) continue;
             const original = node.textContent.trim();
             if (original && (translations.es[original] || translations.zh[original])) {
-                staticText.push({ node, original });
+                const leading = node.textContent.slice(0, node.textContent.indexOf(original));
+                const trailing = node.textContent.slice(node.textContent.indexOf(original) + original.length);
+                staticText.push({ node, original, leading, trailing });
             }
         }
 
@@ -1215,8 +1217,8 @@
             document.documentElement.lang = language === 'zh' ? 'zh-CN' : language;
             document.getElementById('languageSelect').value = language;
             localStorage.setItem('pcbSimLanguage', language);
-            staticText.forEach(({ node, original }) => {
-                node.textContent = node.textContent.replace(node.textContent.trim(), t(original));
+            staticText.forEach(({ node, original, leading, trailing }) => {
+                node.textContent = leading + t(original) + trailing;
             });
             document.title = t('🏭 Advanced PCB Production Floor Simulator').replace('🏭 ', '');
             document.getElementById('languageSelect').setAttribute('aria-label', language === 'es' ? 'Idioma' : language === 'zh' ? '语言' : 'Language');
@@ -1325,7 +1327,7 @@
 
         function pauseSimulation() {
             state.paused = !state.paused;
-            document.getElementById('pauseBtn').textContent = state.paused ? '▶ Resume' : '⏸ Pause';
+            document.getElementById('pauseBtn').textContent = t(state.paused ? '▶ Resume' : '⏸ Pause');
         }
 
         function resetSimulation() {
@@ -1350,7 +1352,7 @@
 
             document.getElementById('startBtn').disabled = false;
             document.getElementById('pauseBtn').disabled = true;
-            document.getElementById('pauseBtn').textContent = '⏸ Pause';
+            document.getElementById('pauseBtn').textContent = t('⏸ Pause');
             document.getElementById('configuration').querySelectorAll('input').forEach(el => el.disabled = false);
 
             updateProduction();
@@ -1418,8 +1420,8 @@
             state.activityLog.unshift({
                 time: Date.now(),
                 sn: sn,
-                from: STATION_NAMES[fromKey] || fromKey,
-                to: STATION_NAMES[toKey] || toKey,
+                from: fromKey,
+                to: toKey,
                 failed: !!failed
             });
             if (state.activityLog.length > 300) state.activityLog.length = 300;
@@ -1461,11 +1463,15 @@
             if (!el) return;
             const entries = state.activityLog.slice(0, 40);
             el.innerHTML = entries.map(e => {
-                const t = new Date(e.time).toLocaleTimeString();
+                const time = new Date(e.time).toLocaleTimeString();
                 const routeClass = e.failed ? 'log-route fail-route' : 'log-route';
                 const arrow = e.failed ? '⇥' : '→';
-                return `<div class="log-entry"><span class="log-time">[${t}]</span> <span class="log-sn">${e.sn}</span> <span class="${routeClass}">${e.from} ${arrow} ${e.to}</span></div>`;
-            }).join('') || '<div class="log-entry">No transfers yet…</div>';
+                return `<div class="log-entry"><span class="log-time">[${time}]</span> <span class="log-sn">${e.sn}</span> <span class="${routeClass}">${translateStation(e.from)} ${arrow} ${translateStation(e.to)}</span></div>`;
+            }).join('') || `<div class="log-entry">${t('No transfers yet…')}</div>`;
+        }
+
+        function translateStation(key) {
+            return t(STATION_NAMES[key] || key);
         }
 
         function processStation(fromStation, toStation, canFail = false) {
@@ -1591,7 +1597,7 @@
                     const animClass = board.isAnimating ? 'animating' : '';
                     const failClass = board.everFailed ? 'ever-failed' : '';
                     const selClass = state.selectedSn === board.sn ? 'selected-board' : '';
-                    const failNote = board.everFailed ? ' (previously failed)' : '';
+                    const failNote = board.everFailed ? t(' (previously failed)') : '';
                     boardsHtml += `<div class="board ${statusClass} ${animClass} ${failClass} ${selClass}" data-sn="${board.sn}" title="${board.sn}${failNote}" onclick="selectBoard('${board.sn}')">${board.sn}</div>`;
                 });
 
@@ -1605,19 +1611,19 @@
                 html += `
                     <div class="station-wrapper">
                     <div class="station ${isRepair ? 'critical' : ''}" data-station="${config.key}">
-                        <div class="station-header">${config.icon} ${config.name}</div>
+                        <div class="station-header">${config.icon} ${translateStation(config.key)}</div>
                         <div class="station-info">
-                            Time: ${station.time.toFixed(1)}s | Cap: ${station.capacity}
+                            ${t('Time')}: ${station.time.toFixed(1)}${t('s')} | ${t('Cap')}: ${station.capacity}
                         </div>
                         <div class="station-info">
-                            Queue: ${station.queue.length} | Processing: ${station.processing.length}
+                            ${t('Queue')}: ${station.queue.length} | ${t('Processing')}: ${station.processing.length}
                         </div>
                         <div class="station-info io-counts">
-                            In: ${station.totalIn} | Out: ${station.totalOut}
+                            ${t('In')}: ${station.totalIn} | ${t('Out')}: ${station.totalOut}
                         </div>
                         ${config.key === 'packing' ? `
                             <div class="station-info">
-                                Box: ${state.stations.packing.currentBox.length}/${state.stations.packing.capacity}
+                                ${t('Box')}: ${state.stations.packing.currentBox.length}/${state.stations.packing.capacity}
                             </div>
                         ` : ''}
                         <div class="station-boards">${boardsHtml}</div>
@@ -1626,7 +1632,7 @@
                         <div class="packing-extra">
                         ${state.stations.packing.currentBox.length > 0 ? `
                             <div class="current-box-strip">
-                                <div style="font-weight: 600; color: #e65100; font-size: 0.8em; margin-bottom: 4px;">📥 Filling current box:</div>
+                                <div style="font-weight: 600; color: #e65100; font-size: 0.8em; margin-bottom: 4px;">📥 ${t('Filling current box:')}</div>
                                 <div class="packing-contents">
                                     ${state.stations.packing.currentBox.map(b => 
                                         `<span class="board-sn" title="${b.sn}">${b.sn}</span>`
@@ -1637,13 +1643,13 @@
                         
                         ${state.stations.packing.processing.length > 0 ? `
                             <div style="margin-top: 8px; border-top: 1px solid #e0e0e0; padding-top: 6px;">
-                                <div style="font-weight: 600; color: #333; margin-bottom: 4px; font-size: 0.85em;">📦 Packed Boxes:</div>
+                                <div style="font-weight: 600; color: #333; margin-bottom: 4px; font-size: 0.85em;">📦 ${t('Packed Boxes:')}</div>
                                 ${state.stations.packing.processing.map(box => {
                                     const animClass = box.isAnimating ? 'box-moving' : '';
                                     return `
                                         <div class="packing-box ${animClass}">
                                             <div class="packing-box-header">
-                                                🏷️ ${box.boxSN} (${box.boards.length} boards)
+                                                🏷️ ${box.boxSN} (${box.boards.length} ${t('boards')})
                                             </div>
                                             <div class="packing-contents">
                                                 ${box.boards.map(b => 
@@ -1658,7 +1664,7 @@
                         </div>
                         ` : ''}
                     </div>
-                    ${isLastInChain ? `<div class="flow-connector ${flowActive ? 'active' : ''}" title="Flow direction">➜</div>` : ''}
+                    ${isLastInChain ? `<div class="flow-connector ${flowActive ? 'active' : ''}" title="${t('Flow direction')}">➜</div>` : ''}
                     </div>
                 `;
             });
